@@ -1,0 +1,29 @@
+{
+  "name": "express-split",
+  "version": "0.1.0",
+  "description": "Express middleware for split and AB testing",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guyb7/express-split.git"
+  },
+  "keywords": [
+    "express",
+    "split",
+    "ab",
+    "testing"
+  ],
+  "author": "Guy Brukhis <guy.br7@gmail.com> (http://guyb7.com/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guyb7/express-split/issues"
+  },
+  "homepage": "https://github.com/guyb7/express-split#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3"
+  }
+}
