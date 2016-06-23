@@ -23,6 +23,7 @@ app.use(split({
 Start an experiment for a user (a random option will be assigned):
 ```javascript
 app.get('/', (req, res) => {
+  req.split.set_id(1234); // Sets an indentifier for this user - can be avoided if using cookies
   req.split.start('button-text', () => {
     res.send('Home page');
   });
@@ -63,6 +64,8 @@ app.get('/admin/experiments', (req, res) => {
 ```
 
 ## Cookies
+**Note:** If you don't use cookies you have to manually specify an integer identification for the user.
+
 Call a cookie middleware like [cookie-parser](https://github.com/expressjs/cookie-parser) before using express-split:
 ```
 const cookieParser = require('cookie-parser');
@@ -80,7 +83,7 @@ app.use(split({use_cookies: true}));
 | db_pool               | Connection pool object. Required if chosen a database storage            | `false`                  |
 | db_table_experiments  | Where to store the experiments in the database                           | `'splt_experiments'`     |
 | db_table_users        | Where to store the users in the database                                 | `'splt_users'`           |
-| use_cookies           | Whether or not to use cookies. If false, use `req.split.set_id()` to manually set an identifier for each user | `false`      |
+| use_cookies           | Whether or not to use cookies. If false, use `req.split.set_id()` to manually set an identifier for each user | `false` |
 | cookie_name           | The cookie name to use                                                   | `'_spltuid'`             |
 | cookie_max_age        | The max-age to set for the cookie                                        | `15552000000` (180 days) |
 
@@ -99,3 +102,13 @@ The `experiments` object holds the experiment name in each key, with the value o
 ```
 
 ## Storage
+#### in-memory
+#### mysql
+
+## API
+#### Constructor
+#### set_id(user_id)
+#### start(experiment_id, callback)
+#### get(experiment_id, callback)
+#### finish(experiment_id, callback)
+#### results(callback)
