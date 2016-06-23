@@ -2,22 +2,25 @@
 Express middleware for split and AB testing. Allows to run multiple experiments and track conversions to choose the winning variant.
 
 ## Usage
-Add express-split to your project
+Add express-split to your project:
 ```shell
 npm install express-split
 ```
-Import express-split
+
+Import express-split:
 ```javascript
 const split = require('express-split');
 ```
-Add your experiments
+
+Add your experiments:
 ```javascript
 app.use(split({
   experiments: {
    'button-text': {options: ['sign-up', 'start', 'early-access']}
 }}));
 ```
-Start an experiment for a user (a random option will be assigned)
+
+Start an experiment for a user (a random option will be assigned):
 ```javascript
 app.get('/', (req, res) => {
   req.split.start('button-text', () => {
@@ -25,7 +28,8 @@ app.get('/', (req, res) => {
   });
 });
 ```
-Do different things for each variant
+
+Do different things for each variant:
 ```javascript
 app.get('/product', (req, res) => {
   req.split.get('button-text', (option) => {
@@ -39,7 +43,8 @@ app.get('/product', (req, res) => {
   });
 });
 ```
-Mark convertions
+
+Mark convertions:
 ```javascript
 app.post('/subscribe', (req, res) => {
   req.split.finish('button-text', () => {
@@ -47,7 +52,8 @@ app.post('/subscribe', (req, res) => {
   });
 });
 ```
-Get the results for each experiment
+
+Get the results for each experiment:
 ```javascript
 app.get('/admin/experiments', (req, res) => {
   req.split.results((results) => {
@@ -56,8 +62,16 @@ app.get('/admin/experiments', (req, res) => {
 });
 ```
 
-## Options
-
 ## Cookies
+Call a cookie middleware like [cookie-parser](https://github.com/expressjs/cookie-parser) before using express-split:
+```
+const cookieParser = require('cookie-parser');
+const split        = require('express-split');
+
+app.use(cookieParser());
+app.use(split({use_cookies: true}));
+```
+
+## Options
 
 ## Storage
