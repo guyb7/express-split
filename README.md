@@ -67,7 +67,7 @@ app.get('/admin/experiments', (req, res) => {
 **Note:** If you don't use cookies you have to manually specify an integer identification for the user.
 
 Call a cookie middleware like [cookie-parser](https://github.com/expressjs/cookie-parser) before using express-split:
-```
+```javascript
 const cookieParser = require('cookie-parser');
 const split        = require('express-split');
 
@@ -90,7 +90,7 @@ app.use(split({use_cookies: true}));
 #### experiments
 
 The `experiments` object holds the experiment name in each key, with the value of a new object `options` that holds an array of the variants for this experiment. As a convention, the first option should be the default option (if anything fails, the first option will be returned).
-```
+```javascript
 {
   'button-text': {
     options: ['sign-up', 'start', 'early-access']
@@ -102,8 +102,38 @@ The `experiments` object holds the experiment name in each key, with the value o
 ```
 
 ## Storage
-#### in-memory
+#### in-memory (default)
+**Note:** Using this option, your data will be deleted once the node process is stopped.
+
+Stores the experiments and users data in the node process memory. Useful for setting up, not recommended in production.
+
 #### mysql
+Persists the data to a MySQL database.
+Creates 2 tables: `splt_experiments` and `splt_users` (configurable).
+A required `db_pool` object must be provided.
+
+```javascript
+const app   = express();
+const split = require('express-split');
+const mysql = require('mysql');
+const pool  = mysql.createPool({
+  connectionLimit : 30,
+  host     : 'localhost',
+  user     : 'db_username',
+  password : 'secret_password',
+  database : 'db_name'
+});
+
+app.use(split({
+  storage: 'mysql',
+  db_pool: pool,
+  experiments: {
+    'price': {
+      options: ['300', '200', '400']
+    }
+  }
+}));
+```
 
 ## API
 #### Constructor
