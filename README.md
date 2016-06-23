@@ -73,5 +73,29 @@ app.use(split({use_cookies: true}));
 ```
 
 ## Options
+| Option                | Description    | Default                                                                            |
+| ----------------------|----------------|------------------------------------------------------------------------------------|
+| experiments           | The available experiments and their options (see format below)           | `{}`                     |
+| storage               | Where to store the experiments results (Options: `in-memory`, `mysql`)   | `'in-memory'`            |
+| db_pool               | Connection pool object. Required if chosen a database storage            | `false`                  |
+| db_table_experiments  | Where to store the experiments in the database                           | `'splt_experiments'`     |
+| db_table_users        | Where to store the users in the database                                 | `'splt_users'`           |
+| use_cookies           | Whether or not to use cookies. If false, use `req.split.set_id()` to manually set an identifier for each user | `false`      |
+| cookie_name           | The cookie name to use                                                   | `'_spltuid'`             |
+| cookie_max_age        | The max-age to set for the cookie                                        | `15552000000` (180 days) |
+
+#### experiments
+
+The `experiments` object holds the experiment name in each key, with the value of a new object `options` that holds an array of the variants for this experiment. As a convention, the first option should be the default option (if anything fails, the first option will be returned).
+```
+{
+  'button-text': {
+    options: ['sign-up', 'start', 'early-access']
+  },
+  'price': {
+    options: ['300', '200', '400']
+  }
+}
+```
 
 ## Storage
