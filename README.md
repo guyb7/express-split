@@ -81,10 +81,10 @@ app.use(split({use_cookies: true}));
 | experiments           | The available experiments and their options (see format below)           | `{}`                     |
 | storage               | Where to store the experiments results (Options: `in-memory`, `mysql`)   | `'in-memory'`            |
 | db_pool               | Connection pool object. Required if chosen a database storage            | `false`                  |
-| db_table_experiments  | Where to store the experiments in the database                           | `'splt_experiments'`     |
-| db_table_users        | Where to store the users in the database                                 | `'splt_users'`           |
+| db_table_experiments  | Where to store the experiments in the database                           | `'split_experiments'`    |
+| db_table_users        | Where to store the users in the database                                 | `'split_users'`          |
 | use_cookies           | Whether or not to use cookies. If false, use `req.split.set_id()` to manually set an identifier for each user | `false` |
-| cookie_name           | The cookie name to use                                                   | `'_spltuid'`             |
+| cookie_name           | The cookie name to use                                                   | `'_splituid'`            |
 | cookie_max_age        | The max-age to set for the cookie                                        | `15552000000` (180 days) |
 
 #### experiments
@@ -109,7 +109,7 @@ Stores the experiments and users data in the node process memory. Useful for set
 
 #### mysql
 Persists the data to a MySQL database.
-Creates 2 tables: `splt_experiments` and `splt_users` (configurable).
+Creates 2 tables: `split_experiments` and `split_users` (configurable).
 A required `db_pool` object must be provided.
 
 ```javascript
