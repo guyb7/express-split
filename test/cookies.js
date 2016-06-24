@@ -9,7 +9,7 @@ const should       = require('chai').should(),
 describe('#cookies', function() {
   let app;
 
-  before(function() {
+  beforeEach(function() {
     app = express();
     app.use(cookieParser());
     app.use(split({
@@ -18,16 +18,40 @@ describe('#cookies', function() {
        'test1': {options: ['1', '2', '3']}
       }
     }));
+  });
+
+  it('sets a cookie with random user_id', function(done) {
     app.get('/test1', function (req, res) {
       req.split.start('test1', function() {
         res.send();
       });
     });
-  });
-
-  it('sets a cookie', function(done) {
     request(app)
       .get('/test1')
-      .expect('set-cookie', /^ab=%7B%22selection-test%22%3A0%7D;/, done);
+      .expect('set-cookie', /_splituid=\d{0,9};/, done);
+  });
+
+  it('sets a cookie with provided user_id', function(done) {
+    app.get('/test1', function (req, res) {
+      req.split.set_id(123456789);
+      req.split.start('test1', function() {
+        res.send();
+      });
+    });
+    request(app)
+      .get('/test1')
+      .expect('set-cookie', /_splituid=123456789;/, done);
+  });
+
+  it('reads an existing cookie and sets the user_id to max 9 digits', function(done) {
+    app.get('/test1', function (req, res) {
+      req.cookies._splituid = '987654321000000000';
+      req.split.start('test1', function() {
+        res.send();
+      });
+    });
+    request(app)
+      .get('/test1')
+      .expect('set-cookie', /_splituid=987654321;/, done);
   });
 });
