@@ -2,7 +2,7 @@
   "name": "express-split",
   "version": "0.1.0",
   "description": "Express middleware for split and AB testing",
-  "main": "index.js",
+  "main": "express-split.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
