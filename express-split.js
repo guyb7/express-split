@@ -17,14 +17,16 @@ const ExpressSplit = (user_options) => {
   const storage = new SplitStorage(options);
 
   const check_to_set_cookie = (req, res) => {
-    if (req.split.id === false && options.use_cookies === true) {
-      if (req.cookies[options.cookie_name]) {
-        req.split.id = parseInt(req.cookies[options.cookie_name].substring(0, 9), 10);
-      } else {
-        const uid = parseInt(uuid.v4().replace(/[^0-9]/g, '').substring(0, 9), 10);
-        res.cookie(options.cookie_name, uid, { maxAge: options.cookie_max_age });
-        req.split.id = uid;
+    if (options.use_cookies === true) {
+      if (req.split.id === false) {
+        if (req.cookies[options.cookie_name]) {
+          req.split.id = parseInt(req.cookies[options.cookie_name].substring(0, 9), 10);
+        } else {
+          const uid = parseInt(uuid.v4().replace(/[^0-9]/g, '').substring(0, 9), 10);
+          req.split.id = uid;
+        }
       }
+      res.cookie(options.cookie_name, req.split.id, { maxAge: options.cookie_max_age });
     }
   };
 
