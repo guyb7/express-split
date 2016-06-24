@@ -1,6 +1,8 @@
 "use strict";
 
-const ExpressSplit = () => {
+const uuid = require('node-uuid');
+
+const ExpressSplit = (user_options) => {
   const options = Object.assign({
     experiments: {},
     storage:                     'in-memory', // in-memory, mysql
@@ -30,9 +32,9 @@ const ExpressSplit = () => {
     req.split = {
       id: false,
       set_id: (user_id) => {
-        if (!isNaN(value) && 
-            parseInt(Number(value)) == value && 
-            !isNaN(parseInt(value, 10))) {
+        if (!isNaN(user_id) && 
+            parseInt(Number(user_id)) === user_id && 
+            !isNaN(parseInt(user_id, 10))) {
           req.split.id = user_id;
         } else {
           throw new Error(`Split set_id() must receive an integer`);
