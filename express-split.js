@@ -3,7 +3,7 @@
 const uuid = require('node-uuid');
 
 const ExpressSplit = (user_options) => {
-  const options = Object.assign({
+  const default_options = {
     experiments: {},
     storage:                     'in-memory', // in-memory, mysql
     db_pool:                     false,
@@ -12,7 +12,8 @@ const ExpressSplit = (user_options) => {
     use_cookies:                 false,
     cookie_name:                 '_splituid',
     cookie_max_age:              15552000000 // 180 days in milliseconds
-  }, user_options);
+  };
+  const options = Object.assign(default_options, user_options);
 
   const storage = new SplitStorage(options);
 
@@ -56,6 +57,15 @@ const ExpressSplit = (user_options) => {
       },
       results: (callback) => {
         return storage.getResults(callback);
+      },
+      __test: () => {
+        // Exposes private objects for unit testing
+        return {
+          user_options:    user_options,
+          default_options: default_options,
+          options:         options,
+          storage:         storage
+        }
       }
     };
     next();
