@@ -1,7 +1,6 @@
 "use strict";
 
-const should       = require('chai').should(),
-      split        = require('../express-split'),
+const split        = require('../express-split'),
       express      = require('express'),
       cookieParser = require('cookie-parser'),
       request      = require('supertest');

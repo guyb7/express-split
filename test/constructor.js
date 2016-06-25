@@ -1,7 +1,6 @@
 "use strict";
 
 const should       = require('chai').should(),
-      sinon        = require('sinon'),
       split        = require('../express-split'),
       express      = require('express'),
       request      = require('supertest');
