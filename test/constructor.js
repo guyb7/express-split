@@ -28,8 +28,8 @@ describe('#constructor', function() {
   it('overrides the default options with provided options', function(done) {
     const options = {
       experiments:          {'test1': {options: ['1', '2', '3']}},
-      storage:              'in-memory',
-      db_pool:              true,
+      storage:              'mysql',
+      db_pool:              {query: () => {}},
       db_table_experiments: 'split_experiments_custom',
       db_table_users:       'split_experiments_custom',
       use_cookies:          true,
