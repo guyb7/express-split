@@ -14,7 +14,9 @@
     "express",
     "split",
     "ab",
-    "testing"
+    "testing",
+    "node",
+    "npm"
   ],
   "author": "Guy Brukhis <guy.br7@gmail.com> (http://guyb7.com/)",
   "license": "ISC",
