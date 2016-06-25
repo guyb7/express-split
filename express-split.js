@@ -180,6 +180,104 @@ class SplitStorageInMemory extends SplitStorageAbstract {
   }
 }
 
+class SplitStorageMysql extends SplitStorageAbstract {
+  // The construction of the tables is async, assuming that it won't take long and no users will be missed
+  constructor(options) {
+    super();
+    this.pool   = options.db_pool;
+    this.tables = {
+      experiments: options.db_table_experiments,
+      users:       options.db_table_users
+    };
+    this.experiments = options.experiments;
+    // Create tables
+    this.pool.query(`CREATE TABLE IF NOT EXISTS ?? (user_id INT NOT NULL, experiment VARCHAR(45) NOT NULL, experiment_option VARCHAR(45) NOT NULL, converted TINYINT(1) NOT NULL DEFAULT 0, UNIQUE INDEX user_option (user_id ASC, experiment ASC, experiment_option ASC))`, [this.tables.users], (err) => {
+      if (err){
+        console.error(err, 'Creating the users table failed');
+      }
+    });
+    this.pool.query(`CREATE TABLE IF NOT EXISTS ?? (experiment VARCHAR(45) NOT NULL, experiment_option VARCHAR(45) NOT NULL, weight FLOAT NULL DEFAULT NULL, impressions INT NOT NULL DEFAULT 0,
+  conversions INT NOT NULL DEFAULT 0, UNIQUE INDEX experiment_options (experiment ASC, experiment_option ASC))`, [this.tables.experiments], (err) => {
+      if (err){
+        console.error(err, 'Creating the experiments table failed');
+      } else {
+        // Add new experiments
+        for (let e in this.experiments) {
+          const ops = this.experiments[e].options;
+          for (let o in ops) {
+            this.pool.query(`INSERT INTO ?? (experiment, experiment_option) VALUES (?, ?) ON DUPLICATE KEY UPDATE experiment_option=experiment_option`, [this.tables.experiments, e, ops[o]], (err) => {
+              if (err){
+                console.error(err, `Inserting the experiment option ${ops[o]} under ${e} failed`);
+              }
+            });
+          }
+        } 
+      }
+    });
+  }
+
+  addUserOption(user_id, experiment_id, callback) {
+    const chosen_option = this.generateRandomOption(user_id, this.experiments[experiment_id].options);
+    this.pool.query(`INSERT INTO ?? (user_id, experiment, experiment_option) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_id=user_id`, [this.tables.users, user_id, experiment_id, chosen_option], (err) => {
+      if (err){
+        console.error(err, `Inserting a user option failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+      }
+      this.addImpression(experiment_id, chosen_option, callback);
+    });
+  }
+
+  getUserOption(user_id, experiment_id, callback) {
+    this.pool.query(`SELECT experiment_option FROM ?? WHERE user_id = ? AND experiment = ? LIMIT 1`, [this.tables.users, user_id, experiment_id], (err, result) => {
+      if (err){
+        console.error(err, `Select user option failed: ${user_id}, ${experiment_id}`);
+        callback(this.experiments[experiment_id][0]);
+      } else {
+        callback(result[0]['experiment_option']);
+      }
+    });
+  }
+
+  addImpression(experiment_id, chosen_option, callback) {
+    this.pool.query(`UPDATE ?? SET impressions = impressions + 1 WHERE experiment = ? AND experiment_option = ? LIMIT 1`, [this.tables.experiments, experiment_id, chosen_option], (err) => {
+      if (err){
+        console.error(err, `Incrementing impressions failed: ${experiment_id}, ${chosen_option}`);
+      }
+      callback();
+    });
+  }
+
+  addConversion(experiment_id, user_id, callback) {
+    this.getUserOption(user_id, experiment_id, (chosen_option) => {
+      this.pool.query(`UPDATE ?? SET converted = 1 WHERE user_id = ? AND  experiment = ? AND experiment_option = ? LIMIT 1`, [this.tables.users, user_id, experiment_id, chosen_option], (err, result) => {
+        if (err){
+          console.error(err, `Updating conversion failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+          callback();
+        } else if (result.changedRows === 1) {
+          this.pool.query(`UPDATE ?? SET conversions = conversions + 1 WHERE experiment = ? AND experiment_option = ? LIMIT 1`, [this.tables.experiments, experiment_id, chosen_option], (err) => {
+            if (err){
+              console.error(err, `Incrementing conversions failed: ${experiment_id}, ${chosen_option}`);
+            }
+            callback();
+          });
+        } else {
+          callback();
+        }
+      });
+    });
+  }
+
+  getResults(callback) {
+    this.pool.query(`SELECT * FROM ??`, [this.tables.experiments], (err, results) => {
+      if (err){
+        console.error(err, 'Fetching experiments failed');
+        callback({results: []});
+      } else {
+        callback({results: results});
+      }
+    });
+  }
+}
+
 const seeded_rand = (seed) => {
   seed = (seed * 9301 + 49297) % 233280;
   return seed / 233280;
