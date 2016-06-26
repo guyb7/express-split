@@ -64,7 +64,8 @@ describe('#storage-in-memory', function() {
             .get('/test1')
             .expect({
               variant: variant
-            }).end(function(err, res){
+            })
+            .end(function(err, res){
               if (err) throw err;
               done();
             });
@@ -75,7 +76,42 @@ describe('#storage-in-memory', function() {
     });
   }
 
-  xit('adds only a single impression for each user', function(done) {
+  it('adds only a single impression for each user', function(done) {
+    app.get('/test1', function (req, res) {
+      req.split.set_id(seed);
+      for (let i = 0; i < 10; i++) {
+        req.split.start('test1', function() {
+          res.send();
+        });
+      }
+    });
+    app.get('/results', function (req, res) {
+      req.split.results(function(results) {
+        res.send(results.results);
+      });
+    });
+
+    request(app)
+      .get('/test1')
+      .expect(function() {
+        request(app)
+          .get('/results')
+          .expect(function(res) {
+            for (let i in res.body.test1) {
+              if (res.body.test1[i].impressions > 1) {
+                console.log(JSON.stringify(res.body));
+                throw new Error('More than one impression for the same user');
+              }
+            }
+            done();
+          })
+          .end(function(err, res){
+            if (err) throw err;
+          });
+      })
+      .end(function(err, res){
+        if (err) throw err;
+      });
   });
 
   xit('adds only a single conversion for each user', function(done) {
