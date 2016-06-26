@@ -19,7 +19,7 @@ describe('#storage-in-memory', function() {
 
   it('chooses a random option', function(done) {
     // Run 1000 tests, check that the distribution is pretty much equal between the variants
-    app.get('/test1', function (req, res) {
+    app.get('/start', function (req, res) {
       for (let i = seed; i < seed + 1000; i++) {
         req.split.set_id(i);
         req.split.start('test1', function() {
@@ -38,7 +38,7 @@ describe('#storage-in-memory', function() {
       });
     });
     request(app)
-      .get('/test1')
+      .get('/start')
       .end(function(err, res){
         if (err) throw err;
       });
@@ -47,7 +47,7 @@ describe('#storage-in-memory', function() {
   // Run 10 times to better avoid false positives
   for (let i = 1; i <= 10; i++) {
     it('remembers the chosen option between requests #' + i, function(done) {
-      app.get('/test1', function (req, res) {
+      app.get('/start', function (req, res) {
         req.split.set_id(seed);
         req.split.start('test1', function() {
           req.split.get('test1', function(variant) {
@@ -57,11 +57,11 @@ describe('#storage-in-memory', function() {
       });
 
       request(app)
-        .get('/test1')
+        .get('/start')
         .expect(function(res) {
           const variant = res.body.variant;
           request(app)
-            .get('/test1')
+            .get('/start')
             .expect({
               variant: variant
             })
@@ -77,7 +77,7 @@ describe('#storage-in-memory', function() {
   }
 
   it('adds only a single impression for each user', function(done) {
-    app.get('/test1', function (req, res) {
+    app.get('/start', function (req, res) {
       req.split.set_id(seed);
       for (let i = 0; i < 10; i++) {
         req.split.start('test1', function() {
@@ -86,13 +86,14 @@ describe('#storage-in-memory', function() {
       }
     });
     app.get('/results', function (req, res) {
+      req.split.set_id(seed);
       req.split.results(function(results) {
         res.send(results.results);
       });
     });
 
     request(app)
-      .get('/test1')
+      .get('/start')
       .expect(function() {
         request(app)
           .get('/results')
@@ -114,7 +115,55 @@ describe('#storage-in-memory', function() {
       });
   });
 
-  xit('adds only a single conversion for each user', function(done) {
-  });
+  it('adds only a single conversion for each user', function(done) {
+    app.get('/start', function (req, res) {
+      req.split.set_id(seed);
+      req.split.start('test1', function() {
+        res.send();
+      });
+    });
+    app.get('/finish', function (req, res) {
+      req.split.set_id(seed);
+      for (let i = 0; i < 10; i++) {
+        req.split.finish('test1', function() {
+          res.send();
+        });
+      }
+    });
+    app.get('/results', function (req, res) {
+      req.split.set_id(seed);
+      req.split.results(function(results) {
+        res.send(results.results);
+      });
+    });
 
+    request(app)
+      .get('/start')
+      .expect(function() {
+        request(app)
+          .get('/finish')
+          .expect(function(res) {
+            request(app)
+              .get('/results')
+              .expect(function(res) {
+                for (let i in res.body.test1) {
+                  if (res.body.test1[i].conversions > 1) {
+                    console.log(JSON.stringify(res.body));
+                    throw new Error('More than one impression for the same user');
+                  }
+                }
+                done();
+              })
+              .end(function(err, res){
+                if (err) throw err;
+              });
+          })
+          .end(function(err, res){
+            if (err) throw err;
+          });
+      })
+      .end(function(err, res){
+        if (err) throw err;
+      });
+  });
 });
