@@ -6,6 +6,7 @@ const split        = require('../express-split'),
 
 describe('#storage-in-memory', function() {
   let app;
+  const seed = Math.floor(Math.random() * 10000) + 1000;
 
   beforeEach(function() {
     app = express();
@@ -19,7 +20,6 @@ describe('#storage-in-memory', function() {
   it('chooses a random option', function(done) {
     // Run 1000 tests, check that the distribution is pretty much equal between the variants
     app.get('/test1', function (req, res) {
-      const seed = Math.floor(Math.random() * 10000) + 1000;
       for (let i = seed; i < seed + 1000; i++) {
         req.split.set_id(i);
         req.split.start('test1', function() {
@@ -39,11 +39,46 @@ describe('#storage-in-memory', function() {
     });
     request(app)
       .get('/test1')
-      .end();
+      .end(function(err, res){
+        if (err) throw err;
+      });
   });
 
-  xit('remembers the chosen option between requests', function(done) {
-  });
+  // Run 10 times to better avoid false positives
+  for (let i = 1; i <= 10; i++) {
+    it('remembers the chosen option between requests #' + i, function(done) {
+      app.get('/test1', function (req, res) {
+        req.split.set_id(seed);
+        req.split.start('test1', function() {
+          req.split.get('test1', function(variant) {
+            res.send({variant: variant});
+          });
+        });
+      });
+
+      let variant = false;
+      const second_call = function() {
+        request(app)
+          .get('/test1')
+          .expect({
+            variant: variant
+          }).end(function(err, res){
+            if (err) throw err;
+            done();
+          });
+      };
+
+      request(app)
+        .get('/test1')
+        .expect(function(res) {
+          variant = res.body.variant;
+          second_call();
+        })
+        .end(function(err, res){
+          if (err) throw err;
+        });
+    });
+  }
 
   xit('adds only a single impression for each user', function(done) {
   });
