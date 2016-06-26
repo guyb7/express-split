@@ -56,23 +56,18 @@ describe('#storage-in-memory', function() {
         });
       });
 
-      let variant = false;
-      const second_call = function() {
-        request(app)
-          .get('/test1')
-          .expect({
-            variant: variant
-          }).end(function(err, res){
-            if (err) throw err;
-            done();
-          });
-      };
-
       request(app)
         .get('/test1')
         .expect(function(res) {
-          variant = res.body.variant;
-          second_call();
+          const variant = res.body.variant;
+          request(app)
+            .get('/test1')
+            .expect({
+              variant: variant
+            }).end(function(err, res){
+              if (err) throw err;
+              done();
+            });
         })
         .end(function(err, res){
           if (err) throw err;
