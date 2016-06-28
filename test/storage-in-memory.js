@@ -1,8 +1,8 @@
 "use strict";
 
-const split        = require('../express-split'),
-      express      = require('express'),
-      request      = require('supertest');
+const split   = require('../express-split'),
+      express = require('express'),
+      request = require('supertest');
 
 describe('#storage-in-memory', function() {
   let app;
