@@ -8,14 +8,16 @@ describe('#storage-in-memory', function() {
   let app;
   const seed = Math.floor(Math.random() * 10000) + 1000;
 
-  beforeEach(function() {
+  const beforeEachFunction = function() {
     app = express();
     app.use(split({
       experiments: {
        'test1': {options: ['1', '2', '3']}
       }
     }));
-  });
+  };
+
+  beforeEach(beforeEachFunction);
 
   it('chooses a random option', function(done) {
     // Run 1000 tests, check that the distribution is pretty much equal between the variants
@@ -44,11 +46,16 @@ describe('#storage-in-memory', function() {
       });
   });
 
-  // Run 10 times to better avoid false positives
-  for (let i = 1; i <= 10; i++) {
-    it('remembers the chosen option between requests #' + i, function(done) {
+  it('remembers the chosen option between requests', function(done) {
+    // Run 15 times to better avoid false positives
+    const it_recursive = function(n) {
+      if (n < 1) {
+        done();
+        return;
+      }
+      beforeEachFunction();
       app.get('/start', function (req, res) {
-        req.split.set_id(seed);
+        req.split.set_id(seed + (n * 17));
         req.split.start('test1', function() {
           req.split.get('test1', function(variant) {
             res.send({variant: variant});
@@ -67,14 +74,15 @@ describe('#storage-in-memory', function() {
             })
             .end(function(err, res){
               if (err) throw err;
-              done();
+              it_recursive(n - 1);
             });
         })
         .end(function(err, res){
           if (err) throw err;
         });
-    });
-  }
+    }
+    it_recursive(15);
+  });
 
   it('adds only a single impression for each user', function(done) {
     app.get('/start', function (req, res) {
