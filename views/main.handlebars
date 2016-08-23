@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Split Results</title>
+</head>
+
+<body>
+  <h2>Split results</h2>
+  {{#each experiments}}
+    <h3>{{@key}}</h3>
+    <table>
+      <tr>
+        <th>Option</th>
+        <th>Impressions</th>
+        <th>Conversions</th>
+      </tr>
+    {{#each results}}
+      <tr>
+        <td>{{@key}}</td>
+        <td>{{impressions}}</td>
+        <td>{{conversions}}</td>
+      </tr>
+    {{/each}}
+    </table>
+  {{/each}}
+</body>
+</html>

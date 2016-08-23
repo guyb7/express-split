@@ -16,6 +16,7 @@ const ExpressSplit = (user_options) => {
   const options = Object.assign(default_options, user_options);
 
   const storage = new SplitStorage(options);
+  const gui     = new SplitGui();
 
   const check_to_set_cookie = (req, res) => {
     if (options.use_cookies === true) {
@@ -57,6 +58,21 @@ const ExpressSplit = (user_options) => {
       },
       results: (callback) => {
         return storage.getResults(callback);
+      },
+      gui: (req, res) => {
+        let experiments = {};
+        return storage.getResults((experiments_results) => {
+          Object.keys(experiments_results.results).forEach((r) => {
+            const result = experiments_results.results[r];
+            const experiment_name = r;
+            if (!experiments.hasOwnProperty(experiment_name)) {
+              experiments[experiment_name] = {results: {}};
+            }
+            delete result.experiment;
+            experiments[experiment_name].results = result;
+          })
+          gui.render(req, res, experiments);
+        });
       },
       __test: () => {
         // Exposes private objects for unit testing
@@ -106,11 +122,11 @@ class SplitStorage {
 class SplitStorageAbstract {
   constructor() {
     const methods = ['addUserOption', 'getUserOption', 'addImpression', 'addConversion', 'getResults'];
-    for (let m in methods) {
+    Object.keys(methods).forEach((m) => {
       if (this[methods[m]] === undefined) {
         throw new TypeError(`The method ${methods[m]} must be overriden when deriving from SplitStorageAbstract`);
       }
-    }
+    })
   }
 
   generateRandomOption(user_id, experiment_options) {
@@ -125,16 +141,16 @@ class SplitStorageInMemory extends SplitStorageAbstract {
     this.users        = {};
     this.results      = {};
     this.experiments  = options.experiments;
-    for (let e in options.experiments) {
+    Object.keys(options.experiments).forEach((e) => {
       this.results[e] = {};
       const ops = options.experiments[e].options;
-      for (let o in ops) {
+      Object.keys(ops).forEach((o) => {
         this.results[e][ops[o]] = {
           impressions: 0,
           conversions: 0
         };
-      }
-    }
+      })
+    })
   }
 
   addUserOption(user_id, experiment_id, callback) {
@@ -202,27 +218,33 @@ class SplitStorageMysql extends SplitStorageAbstract {
         console.error(err, 'Creating the experiments table failed');
       } else {
         // Add new experiments
-        for (let e in this.experiments) {
+        Object.keys(this.experiments).forEach((e) => {
           const ops = this.experiments[e].options;
-          for (let o in ops) {
+          Object.keys(ops).forEach((o) => {
             this.pool.query(`INSERT INTO ?? (experiment, experiment_option) VALUES (?, ?) ON DUPLICATE KEY UPDATE experiment_option=experiment_option`, [this.tables.experiments, e, ops[o]], (err) => {
               if (err){
                 console.error(err, `Inserting the experiment option ${ops[o]} under ${e} failed`);
               }
             });
-          }
-        } 
+          })
+        })
       }
     });
   }
 
   addUserOption(user_id, experiment_id, callback) {
-    const chosen_option = this.generateRandomOption(user_id, this.experiments[experiment_id].options);
-    this.pool.query(`INSERT INTO ?? (user_id, experiment, experiment_option) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_id=user_id`, [this.tables.users, user_id, experiment_id, chosen_option], (err) => {
-      if (err){
-        console.error(err, `Inserting a user option failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+    this.getUserOption(user_id, experiment_id, (option) => {
+      if (option === null) {
+        const chosen_option = this.generateRandomOption(user_id, this.experiments[experiment_id].options);
+        this.pool.query(`INSERT INTO ?? (user_id, experiment, experiment_option) VALUES (?, ?, ?)`, [this.tables.users, user_id, experiment_id, chosen_option], (err, result) => {
+          if (err){
+            console.error(err, `Inserting a user option failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+          }
+          this.addImpression(experiment_id, chosen_option, callback);
+        });
+      } else {
+        callback();
       }
-      this.addImpression(experiment_id, chosen_option, callback);
     });
   }
 
@@ -231,6 +253,8 @@ class SplitStorageMysql extends SplitStorageAbstract {
       if (err){
         console.error(err, `Select user option failed: ${user_id}, ${experiment_id}`);
         callback(this.experiments[experiment_id][0]);
+      } else if (result.length === 0) {
+        callback(null);
       } else {
         callback(result[0]['experiment_option']);
       }
@@ -272,8 +296,46 @@ class SplitStorageMysql extends SplitStorageAbstract {
         console.error(err, 'Fetching experiments failed');
         callback({results: []});
       } else {
-        callback({results: results});
+        let experiments = {};
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i];
+          if (typeof experiments[r.experiment] === 'undefined') {
+            experiments[r.experiment] = {};
+          }
+          experiments[r.experiment][r.experiment_option] = {
+            impressions: r.impressions,
+            conversions: r.conversions
+          };
+        }
+        callback({results: experiments});
       }
+    });
+  }
+}
+
+class SplitGui {
+  constructor() {
+    this.hbs = require('handlebars');
+    this.fs  = require('fs');
+  }
+
+  render(req, res, results) {
+    console.log(JSON.stringify(results, null, 2));
+    const view_path = __dirname + '/views/main.handlebars';
+    this.fs.readFile(view_path, 'utf-8', (err, data) => {
+      if (err) {
+        res.send(`
+          <h1>Express-Split error</h1>
+          <h3>Could not read the template file</h3>
+          <pre>${JSON.stringify(err, null, 2)}</pre>
+          <h3>Results data</h3>
+          <pre>${JSON.stringify(results, null, 2)}</pre>
+        `);
+        res.end();
+        return;
+      }
+      const template = this.hbs.compile(data);
+      res.send(template({experiments: results}));
     });
   }
 }
