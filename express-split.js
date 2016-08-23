@@ -61,16 +61,16 @@ const ExpressSplit = (user_options) => {
       },
       gui: (req, res) => {
         let experiments = {};
-        return storage.getResults((results) => {
-          for (let r in results.results) {
-            const result = results.results[r];
-            const experiment_name = result.experiment;
+        return storage.getResults((experiments_results) => {
+          Object.keys(experiments_results.results).forEach((r) => {
+            const result = experiments_results.results[r];
+            const experiment_name = r;
             if (!experiments.hasOwnProperty(experiment_name)) {
-              experiments[experiment_name] = {results: []};
+              experiments[experiment_name] = {results: {}};
             }
             delete result.experiment;
-            experiments[experiment_name].results.push(result);
-          }
+            experiments[experiment_name].results = result;
+          })
           gui.render(req, res, experiments);
         });
       },
@@ -122,11 +122,11 @@ class SplitStorage {
 class SplitStorageAbstract {
   constructor() {
     const methods = ['addUserOption', 'getUserOption', 'addImpression', 'addConversion', 'getResults'];
-    for (let m in methods) {
-      if (typeof this[methods[m]] === 'String') {
+    Object.keys(methods).forEach((m) => {
+      if (this[methods[m]] === undefined) {
         throw new TypeError(`The method ${methods[m]} must be overriden when deriving from SplitStorageAbstract`);
       }
-    }
+    })
   }
 
   generateRandomOption(user_id, experiment_options) {
@@ -141,16 +141,16 @@ class SplitStorageInMemory extends SplitStorageAbstract {
     this.users        = {};
     this.results      = {};
     this.experiments  = options.experiments;
-    for (let e in options.experiments) {
+    Object.keys(options.experiments).forEach((e) => {
       this.results[e] = {};
       const ops = options.experiments[e].options;
-      for (let o in ops) {
+      Object.keys(ops).forEach((o) => {
         this.results[e][ops[o]] = {
           impressions: 0,
           conversions: 0
         };
-      }
-    }
+      })
+    })
   }
 
   addUserOption(user_id, experiment_id, callback) {
@@ -218,16 +218,16 @@ class SplitStorageMysql extends SplitStorageAbstract {
         console.error(err, 'Creating the experiments table failed');
       } else {
         // Add new experiments
-        for (let e in this.experiments) {
+        Object.keys(this.experiments).forEach((e) => {
           const ops = this.experiments[e].options;
-          for (let o in ops) {
+          Object.keys(ops).forEach((o) => {
             this.pool.query(`INSERT INTO ?? (experiment, experiment_option) VALUES (?, ?) ON DUPLICATE KEY UPDATE experiment_option=experiment_option`, [this.tables.experiments, e, ops[o]], (err) => {
               if (err){
                 console.error(err, `Inserting the experiment option ${ops[o]} under ${e} failed`);
               }
             });
-          }
-        } 
+          })
+        })
       }
     });
   }
