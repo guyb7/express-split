@@ -288,7 +288,18 @@ class SplitStorageMysql extends SplitStorageAbstract {
         console.error(err, 'Fetching experiments failed');
         callback({results: []});
       } else {
-        callback({results: results});
+        let experiments = {};
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i];
+          if (typeof experiments[r.experiment] === 'undefined') {
+            experiments[r.experiment] = {};
+          }
+          experiments[r.experiment][r.experiment_option] = {
+            impressions: r.impressions,
+            conversions: r.conversions
+          };
+        }
+        callback({results: experiments});
       }
     });
   }
