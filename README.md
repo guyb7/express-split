@@ -63,6 +63,13 @@ app.get('/admin/experiments', (req, res) => {
 });
 ```
 
+Get the results in a web GUI:
+```javascript
+app.get('/admin/experiments', (req, res) => {
+  req.split.gui(req, res);
+});
+```
+
 ## Cookies
 **Note:** If you don't use cookies you have to manually specify an integer identification for the user.
 
