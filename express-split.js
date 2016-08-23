@@ -123,7 +123,7 @@ class SplitStorageAbstract {
   constructor() {
     const methods = ['addUserOption', 'getUserOption', 'addImpression', 'addConversion', 'getResults'];
     for (let m in methods) {
-      if (this[methods[m]] === undefined) {
+      if (typeof this[methods[m]] === 'String') {
         throw new TypeError(`The method ${methods[m]} must be overriden when deriving from SplitStorageAbstract`);
       }
     }
