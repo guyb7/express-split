@@ -233,12 +233,18 @@ class SplitStorageMysql extends SplitStorageAbstract {
   }
 
   addUserOption(user_id, experiment_id, callback) {
-    const chosen_option = this.generateRandomOption(user_id, this.experiments[experiment_id].options);
-    this.pool.query(`INSERT INTO ?? (user_id, experiment, experiment_option) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_id=user_id`, [this.tables.users, user_id, experiment_id, chosen_option], (err) => {
-      if (err){
-        console.error(err, `Inserting a user option failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+    this.getUserOption(user_id, experiment_id, (option) => {
+      if (option === null) {
+        const chosen_option = this.generateRandomOption(user_id, this.experiments[experiment_id].options);
+        this.pool.query(`INSERT INTO ?? (user_id, experiment, experiment_option) VALUES (?, ?, ?)`, [this.tables.users, user_id, experiment_id, chosen_option], (err, result) => {
+          if (err){
+            console.error(err, `Inserting a user option failed: ${user_id}, ${experiment_id} - ${chosen_option}`);
+          }
+          this.addImpression(experiment_id, chosen_option, callback);
+        });
+      } else {
+        callback();
       }
-      this.addImpression(experiment_id, chosen_option, callback);
     });
   }
 
@@ -247,6 +253,8 @@ class SplitStorageMysql extends SplitStorageAbstract {
       if (err){
         console.error(err, `Select user option failed: ${user_id}, ${experiment_id}`);
         callback(this.experiments[experiment_id][0]);
+      } else if (result.length === 0) {
+        callback(null);
       } else {
         callback(result[0]['experiment_option']);
       }
