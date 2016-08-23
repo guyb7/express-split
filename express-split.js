@@ -16,6 +16,7 @@ const ExpressSplit = (user_options) => {
   const options = Object.assign(default_options, user_options);
 
   const storage = new SplitStorage(options);
+  const gui     = new SplitGui();
 
   const check_to_set_cookie = (req, res) => {
     if (options.use_cookies === true) {
@@ -57,6 +58,21 @@ const ExpressSplit = (user_options) => {
       },
       results: (callback) => {
         return storage.getResults(callback);
+      },
+      gui: (req, res) => {
+        let experiments = {};
+        return storage.getResults((results) => {
+          for (let r in results.results) {
+            const result = results.results[r];
+            const experiment_name = result.experiment;
+            if (!experiments.hasOwnProperty(experiment_name)) {
+              experiments[experiment_name] = {results: []};
+            }
+            delete result.experiment;
+            experiments[experiment_name].results.push(result);
+          }
+          gui.render(req, res, experiments);
+        });
       },
       __test: () => {
         // Exposes private objects for unit testing
@@ -274,6 +290,33 @@ class SplitStorageMysql extends SplitStorageAbstract {
       } else {
         callback({results: results});
       }
+    });
+  }
+}
+
+class SplitGui {
+  constructor() {
+    this.hbs = require('handlebars');
+    this.fs  = require('fs');
+  }
+
+  render(req, res, results) {
+    console.log(JSON.stringify(results, null, 2));
+    const view_path = __dirname + '/views/main.handlebars';
+    this.fs.readFile(view_path, 'utf-8', (err, data) => {
+      if (err) {
+        res.send(`
+          <h1>Express-Split error</h1>
+          <h3>Could not read the template file</h3>
+          <pre>${JSON.stringify(err, null, 2)}</pre>
+          <h3>Results data</h3>
+          <pre>${JSON.stringify(results, null, 2)}</pre>
+        `);
+        res.end();
+        return;
+      }
+      const template = this.hbs.compile(data);
+      res.send(template({experiments: results}));
     });
   }
 }
