@@ -1,6 +1,6 @@
 {
   "name": "express-split",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Express middleware for split and AB testing",
   "main": "express-split.js",
   "scripts": {
