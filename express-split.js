@@ -213,7 +213,9 @@ class SplitStorageInMemory extends SplitStorageAbstract {
       this.users[user_id][experiment_id] = {option: chosen_option, converted: false};
       this.addImpression(experiment_id, chosen_option, callback);
     } else {
-      callback();
+      if (callback) {
+        callback();
+      }
     }
   }
 
@@ -227,7 +229,9 @@ class SplitStorageInMemory extends SplitStorageAbstract {
 
   addImpression(experiment_id, chosen_option, callback) {
     this.results[experiment_id][chosen_option].impressions++;
-    callback();
+    if (callback) {
+      callback();
+    }
   }
 
   addConversion(experiment_id, user_id, callback) {
@@ -235,10 +239,14 @@ class SplitStorageInMemory extends SplitStorageAbstract {
       this.getUserOption(user_id, experiment_id, (option) => {
         this.results[experiment_id][option].conversions++;
         this.users[user_id][experiment_id].converted = true;
-        callback();
+        if (callback) {
+          callback();
+        }
       });
     } else {
-      callback();
+      if (callback) {
+        callback();
+      }
     }
   }
   
@@ -294,7 +302,9 @@ class SplitStorageMysql extends SplitStorageAbstract {
           this.addImpression(experiment_id, chosen_option, callback);
         });
       } else {
-        callback();
+        if (callback) {
+          callback();
+        }
       }
     });
   }
@@ -317,7 +327,9 @@ class SplitStorageMysql extends SplitStorageAbstract {
       if (err){
         console.error(err, `Incrementing impressions failed: ${experiment_id}, ${chosen_option}`);
       }
-      callback();
+      if (callback) {
+        callback();
+      }
     });
   }
 
@@ -332,10 +344,14 @@ class SplitStorageMysql extends SplitStorageAbstract {
             if (err){
               console.error(err, `Incrementing conversions failed: ${experiment_id}, ${chosen_option}`);
             }
-            callback();
+            if (callback) {
+              callback();
+            }
           });
         } else {
-          callback();
+          if (callback) {
+            callback();
+          }
         }
       });
     });

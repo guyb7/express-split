@@ -145,7 +145,7 @@ app.use(split({
 ## API
 #### Constructor
 #### set_id(user_id)
-#### start(experiment_id, callback)
+#### start(experiment_id, [callback])
 #### get(experiment_id, callback)
-#### finish(experiment_id, callback)
+#### finish(experiment_id, [callback])
 #### results(callback)
