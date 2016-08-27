@@ -4,26 +4,42 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Split Results</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 
 <body>
-  <h2>Split results</h2>
-  {{#each experiments}}
-    <h3>{{@key}}</h3>
-    <table>
-      <tr>
-        <th>Option</th>
-        <th>Impressions</th>
-        <th>Conversions</th>
-      </tr>
-    {{#each results}}
-      <tr>
-        <td>{{@key}}</td>
-        <td>{{impressions}}</td>
-        <td>{{conversions}}</td>
-      </tr>
+  <div class="page-header">
+    <h1>Split experiments</h1>
+  </div>
+  <div class="container">
+    {{#each experiments}}
+    <div class="panel panel-default">
+      <div class="panel-heading"><h4>{{@key}}</h4></div>
+      <table class="table table-hover table-striped">
+        <tr>
+          <th>Option</th>
+          <th>Impressions</th>
+          <th>Conversions</th>
+          <th>Significance</th>
+          <th>Effect size</th>
+        </tr>
+      {{#each results}}
+        <tr>
+          <td>{{@key}}</td>
+          <td>{{impressions}}</td>
+          <td>{{conversions}}</td>
+          {{#if calculations.success}}
+            <td>{{calculations.significance}}</td>
+            <td>{{calculations.effect_size}}</td>
+          {{else}}
+            <td>{{calculations.error}}</td>
+            <td></td>
+          {{/if}}
+        </tr>
+      {{/each}}
+      </table>
+    </div>
     {{/each}}
-    </table>
-  {{/each}}
+  </div>
 </body>
 </html>
