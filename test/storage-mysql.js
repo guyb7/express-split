@@ -3,8 +3,8 @@
 const split   = require('../express-split'),
       express = require('express'),
       request = require('supertest'),
-      sinon   = require('sinon'),
-      mysql   = require('mysql');
+      sinon   = require('sinon');
+      // mysql   = require('mysql');
 
 describe('#storage-in-memory', function() {
   let app, pool;

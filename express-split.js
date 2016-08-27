@@ -61,6 +61,41 @@ const ExpressSplit = (user_options) => {
       },
       gui: (req, res) => {
         let experiments = {};
+        const NormalP = (x) => {
+          const d1 = 0.0498673470, d2 = 0.0211410061, d3 = 0.0032776263, d4 = 0.0000380036, d5 = 0.0000488906, d6 = 0.0000053830;
+          const a = Math.abs(x);
+          let t = 1.0 + a * (d1 + a * (d2 + a * (d3 + a * (d4 + a * (d5 + a * d6)))));
+          t *= t; t *= t; t *= t; t *= t;
+          t = 1.0 / (t + t);
+          if (x >= 0)
+            t = 1 - t;
+          return t;
+        }
+        const calculate_results = (a_impressions, a_conversions, b_impressions, b_conversions) => {
+          const c_t = a_impressions;
+          const v_t = b_impressions;
+          const c_c = a_conversions;
+          const v_c = b_conversions;
+          if (c_t < 15 || v_t < 15) {
+            return {success: false, error: 'Not enough data'};
+          }
+          const c_p = c_c / c_t;
+          const v_p = v_c / v_t;
+          const std_error = Math.sqrt((c_p * (1 - c_p) / c_t) + (v_p * (1 - v_p) / v_t));
+          const z_value = (v_p - c_p) / std_error;
+          let p_value = NormalP(z_value);
+          if (p_value > 0.5)
+            p_value = 1 - p_value;
+          p_value = Math.round(p_value * 1000) / 1000;
+          const es = ((((v_c/v_t) / (c_c/c_t)) * 100) - 100).toFixed(1);
+          return {
+            success: true,
+            p_value: p_value,
+            significance: ((1 - p_value) * 100).toFixed(1) + '%',
+            is_significant: p_value < 0.05,
+            effect_size: (es > 0 ? '+' : '-') + Math.abs(es) + '%'
+          };
+        }
         return storage.getResults((experiments_results) => {
           Object.keys(experiments_results.results).forEach((r) => {
             const result = experiments_results.results[r];
@@ -70,7 +105,23 @@ const ExpressSplit = (user_options) => {
             }
             delete result.experiment;
             experiments[experiment_name].results = result;
-          })
+            let control_data = false;
+            const control_option = options.experiments[experiment_name].options[0];
+            Object.keys(experiments[experiment_name].results).forEach((rr) => {
+              const result = experiments_results.results[r][rr];
+              if (control_option === rr) {
+                control_data = {impressions: result.impressions, conversions: result.conversions};
+              }
+            });
+            Object.keys(experiments[experiment_name].results).forEach((rr) => {
+              const result = experiments_results.results[r][rr];
+              if (control_option !== rr) {
+                result.calculations = calculate_results(control_data.impressions, control_data.conversions, result.impressions, result.conversions);
+              } else {
+                result.calculations = {success: true, p_value: '', is_significant: true, effect_size: ''};
+              }
+            })
+          });
           gui.render(req, res, experiments);
         });
       },
@@ -320,7 +371,6 @@ class SplitGui {
   }
 
   render(req, res, results) {
-    console.log(JSON.stringify(results, null, 2));
     const view_path = __dirname + '/views/main.handlebars';
     this.fs.readFile(view_path, 'utf-8', (err, data) => {
       if (err) {
